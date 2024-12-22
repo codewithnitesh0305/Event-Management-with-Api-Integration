@@ -61,8 +61,6 @@ public class EventServiceImp implements EventService {
         }
         Long totalElements = eventsPage.getTotalElements();  // Total number of events in the database
         Integer totalPages = (int) Math.ceil((double) totalElements / pageSize);
-        System.out.println("Total Elements: "+ totalElements);
-        System.out.println("Total Pages: "+ totalPages);
         map.put("allEvents", eventsDtoList);
         map.put("totalEvents", totalElements);
         map.put("totalPage",totalPages);
