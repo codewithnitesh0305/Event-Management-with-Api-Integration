@@ -13,10 +13,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -32,15 +29,13 @@ public class EventServiceImp implements EventService {
     private DistanceService distanceService;
 
     @Override
-    public List<EventsDto> getAllEvents(Double startLatitude, Double endLongitude, Integer pageNumber, Integer pageSize) {
-        Sort sort = Sort.by(Sort.Direction.ASC,"Date");
+    public Map<String, Object> getAllEvents(Double startLatitude, Double endLongitude, Integer pageNumber, Integer pageSize, LocalDate startDate) {
+        Map<String, Object> map = new HashMap<>();
+        pageNumber = pageNumber -1;
         Pageable pageable = PageRequest.of(pageNumber,pageSize);
         List<EventsDto> eventsDtoList = new ArrayList<>();
-        Page<Events> eventsPage = eventsRepository.findAll(pageable);
+        Page<Events> eventsPage = eventsRepository.searchEvents(startDate,pageable);
         List<Events> allEvents = eventsPage.getContent();
-        LocalDate startDate = LocalDate.of(2024, 4, 16); // Start from April 16, 2024
-        LocalDate endDate = startDate.plusDays(5);
-        allEvents = allEvents.stream().filter(data -> !data.getDate().isBefore(startDate) && !data.getDate().isAfter(endDate)).sorted(Comparator.comparing(Events::getDate)).collect(Collectors.toList());
         for (Events events : allEvents) {
             EventsDto dto = new EventsDto();
             dto.setEvent_name(events.getEvent_name());
@@ -61,9 +56,17 @@ public class EventServiceImp implements EventService {
             DistanceResponse distanceResponse = distanceService.calculateDistance(startLatitude,endLongitude,events.getLatitude(),events.getLongitude());
             String distance_km = distanceResponse.getDistance();
             dto.setDistance_km(Double.parseDouble(distance_km));
+
             eventsDtoList.add(dto);
         }
-        return eventsDtoList; // Return the complete list of DTOs
+        Long totalElements = eventsPage.getTotalElements();  // Total number of events in the database
+        Integer totalPages = (int) Math.ceil((double) totalElements / pageSize);
+        System.out.println("Total Elements: "+ totalElements);
+        System.out.println("Total Pages: "+ totalPages);
+        map.put("allEvents", eventsDtoList);
+        map.put("totalEvents", totalElements);
+        map.put("totalPage",totalPages);
+        return map; // Return the complete list of DTOs
     }
 
 
